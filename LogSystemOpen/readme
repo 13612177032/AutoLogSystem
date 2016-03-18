@@ -1,0 +1,62 @@
+配置：
+
+1.使用本工具首先需确定项目已经导入了如下jar包
+       activeMq-all     fastjson    spring-beans   aspectjweaver   servlet-api
+       
+       导入工具包：lmms-util,lmms-bean
+2.在后台新建项目，获取项目号
+
+3.在项目下新建配置文件：lmms.properties
+	project=aio   //项目号
+	server=server //服务器
+	
+	queuename= 
+	use_type= 
+	maxThread= 
+	url=tcp://******:***
+	#user=
+	#password=
+
+4.配置aop, methodLog拦截，打印method 日志   ，不配置则方法日志不生效
+    拦截：
+         <bean id="logAspect" class="com.hna.hka.lmms.api.LogAspect"/>  
+         
+            
+		 <!-- log新增 拦截器 -->
+         <aop:aspect ref="logAspect"> 
+            <aop:pointcut id="logMethodPointCut" expression="
+                  @annotation(com.hna.hka.lmms.annotation.ServiceLog)
+            "/> 
+            <aop:around pointcut-ref="logMethodPointCut" method="doMethodLog"/> 
+         </aop:aspect> 
+         
+5.在过滤器中埋点，打印接口日志   不埋点则接口日志不生效
+		//开始时间
+		long before = System.currentTimeMillis();		
+		chain.doFilter(request, response);		
+		//记录
+		HkaLog.filter(before,request,response);
+		
+6.在一场统一处理出加埋点， 不埋点则系统异常不能进行日志管理
+比如：
+HandlerExceptionResolver.resolveException     加上    HkaLog.systemException(e);
+
+
+7.配置项目的模块
+      示例：   ModuleConstant.java--示例
+
+使用
+   1. controller 日志的打印
+   			HkaLog.controller(ModuleConstant.Module.DEMO_TEST, "Controller关键字", "Controller备注");
+   2.service 日志的打印 
+	        @ServiceLog  keyword  remark
+	        
+	        keyWord用法  （注意：remark 部位key值，keyword 为空，则关键字默认为controller关键字）
+	            @ServiceLog(keyword="METHOD_KEYWIRD_1")
+	        	LogThreadUtil.get().put("METHOD_KEYWIRD_1", "方法关键字");
+   3.api 日志打印
+   			HkaLog.api
+   4.exception 日志打印
+       HkaLog.exception
+   5.自定义日志打印 HkaLog.error
+    
